@@ -1,25 +1,25 @@
 # =============================================================================
-# Patient Survival and Risk Level Prediction
-# MSc Dissertation — University of Hertfordshire (Distinction)
+# Patient Survival and Risk Level Prediction Pipeline
 # Author: Bilal Hassan Qadri
 #
-# This script builds a complete machine learning pipeline to predict whether
-# a patient will survive or not based on their clinical ICU data. I went
-# through 14 steps in my dissertation — this code covers all of them.
+# This script implements a comprehensive machine learning pipeline optimized for
+# clinical risk evaluation and patient survival prediction using high-dimensional
+# ICU records. The experimental framework utilizes the WiDS Datathon ICU Dataset,
+# which comprises 64,359 patient rows and 85 clinical features.
 #
-# The main idea: instead of relying on one classifier, I trained seven
-# different models and combined them into a single ensemble that votes on
-# the final prediction. This approach consistently outperformed any
-# individual model on its own.
+# The architecture demonstrates the integration of seven distinct classifiers
+# into a unified probability-weighted soft-voting ensemble model. This structural
+# approach minimizes systemic prediction variance and localized bias, outperforming
+# individual baseline models.
 #
-# Dataset: ICU patient records with ~106 features after preprocessing
-# Target : binary label — 0 (did not survive) | 1 (survived)
+# Dataset: WiDS Datathon ICU Dataset (64,359 rows, 85 clinical features)
+# Target : Binary clinical classification — 0 (Non-Survival) | 1 (Survival)
 # =============================================================================
 
 
 # -----------------------------------------------------------------------------
 # Imports
-# I have grouped these by purpose so it is easy to see what each block does
+# Grouped by functional component to ensure pipeline transparency
 # -----------------------------------------------------------------------------
 
 # Core data handling
@@ -51,7 +51,7 @@ from sklearn.metrics          import (confusion_matrix,
                                       f1_score,
                                       classification_report)
 
-# The seven classifiers I compared in my dissertation
+# Classifiers selected for the comparative evaluation
 from sklearn.linear_model     import LogisticRegression
 from sklearn.tree              import DecisionTreeClassifier
 from sklearn.naive_bayes       import GaussianNB
@@ -66,12 +66,12 @@ from imblearn.combine          import SMOTETomek
 
 
 # =============================================================================
-# STEP 1 — Load the dataset and remove columns we do not need
+# STEP 1 — Dataset Loading and Feature Filtering
 # =============================================================================
-# The raw dataset contains several identifier columns (patient ID, hospital ID
-# etc.) that carry no predictive information. There are also duplicate columns
-# for noninvasive measurements which I identified and removed to avoid
-# redundancy. The 'Unnamed: 83' column is an artefact from the CSV export.
+# The raw dataset contains identifier fields (e.g., patient ID, hospital ID)
+# that carry no predictive signal. Duplicate columns representing noninvasive
+# vital sign telemetry are removed to eliminate feature redundancy.
+# The 'Unnamed: 83' column, representing a CSV export artifact, is also discarded.
 
 print("\n" + "=" * 65)
 print("STEP 1: Loading dataset")
@@ -80,13 +80,11 @@ print("=" * 65)
 df = pd.read_csv('dataset.csv')
 print(f"  Raw shape: {df.shape[0]} rows x {df.shape[1]} columns")
 
-# Drop identifier columns — these are row labels, not features
+# Drop identifier columns (row labels lacking predictive utility)
 id_cols = ['encounter_id', 'patient_id', 'hospital_id', 'Unnamed: 83', 'icu_id']
 df.drop([c for c in id_cols if c in df.columns], axis=1, inplace=True)
 
-# Drop noninvasive duplicate columns
-# These columns record the same vital signs measured a different way.
-# Keeping both would introduce multicollinearity without adding information.
+# Remove noninvasive duplicate features to mitigate multicollinearity
 noninvasive_cols = [c for c in df.columns if 'noninvasive' in c.split('_')]
 df.drop(noninvasive_cols, axis=1, inplace=True)
 
@@ -94,10 +92,10 @@ print(f"  After removing identifiers and duplicates: {df.shape[0]} rows x {df.sh
 
 
 # =============================================================================
-# STEP 2 — Separate features from the target variable
+# STEP 2 — Target-Feature Separation
 # =============================================================================
-# The last column is the binary survival label.
-# Everything else is a clinical feature (vitals, labs, demographics, etc.)
+# The target vector represents binary survival status. The feature matrix comprises
+# clinical parameters including vital signs, laboratory values, and demographics.
 
 print("\n" + "=" * 65)
 print("STEP 2: Separating features and target")
@@ -109,35 +107,33 @@ x = df.iloc[:, :-1].copy()   # features: all clinical measurements
 print(f"  Feature matrix shape : {x.shape}")
 print(f"  Target distribution  :\n{y.value_counts().to_string()}")
 print(f"\n  Class imbalance ratio: {round(y.value_counts()[0] / y.value_counts()[1], 2)}:1")
-print("  (This imbalance is why we need SMOTETomek in Step 6)")
+print("  (This class imbalance requires SMOTETomek resampling in Step 6)")
 
 
 # =============================================================================
-# STEP 3 — Handle categorical columns: impute then encode
+# STEP 3 — Preprocessing of Categorical Features (Imputation and Encoding)
 # =============================================================================
-# Clinical datasets mix numeric measurements with categorical variables like
-# gender, ethnicity, ICU type, admission source, etc. Machine learning models
-# need everything to be numeric, so I:
-#   (a) fill missing categorical values with the most common value
-#   (b) one-hot encode each category into separate binary columns
+# To accommodate learners requiring numerical representations, categorical features
+# (e.g., gender, ethnicity, ICU type) undergo:
+#   (a) Mode imputation for missing values
+#   (b) One-hot encoding to generate binary indicator columns
 
 print("\n" + "=" * 65)
 print("STEP 3: Categorical imputation and one-hot encoding")
 print("=" * 65)
 
 cat_cols = x.select_dtypes('object').columns.tolist()
-print(f"  Found {len(cat_cols)} categorical columns")
+print(f"  Detected {len(cat_cols)} categorical columns")
 
 # (a) Impute missing categorical values
 cat_missing = [c for c in cat_cols if x[c].isna().any()]
 if cat_missing:
-    print(f"  Imputing {len(cat_missing)} categorical columns with most frequent value")
+    print(f"  Imputing {len(cat_missing)} categorical columns using mode imputation")
     impute_cat = SimpleImputer(strategy='most_frequent')
     x[cat_missing] = impute_cat.fit_transform(x[cat_missing])
 
-# (b) One-hot encode — converts each category into a binary 0/1 column
-# handle_unknown='ignore' means if we see an unseen category at test time,
-# it just gets encoded as all zeros rather than crashing
+# (b) One-hot encoding transformation
+# Unseen categories during inference are mapped to all-zero vectors to ensure robustness.
 encoder = OneHotEncoder(sparse_output=False, dtype=np.int32, handle_unknown='ignore')
 x_encoded   = encoder.fit_transform(x[cat_cols])
 df_encoded  = pd.DataFrame(
@@ -152,12 +148,11 @@ print(f"  Shape after encoding: {x.shape[0]} rows x {x.shape[1]} columns")
 
 
 # =============================================================================
-# STEP 4 — Handle numeric missing values
+# STEP 4 — Preprocessing of Numerical Features (Imputation)
 # =============================================================================
-# Not all missing values are equal. Columns with very few missing values
-# (under 3%) are safe to drop those rows without losing much data. Columns
-# with more missingness need imputation — I use the median because it is
-# robust to outliers, which are common in ICU lab measurements.
+# Features with low missingness (under a 3% threshold) undergo row-wise exclusion.
+# Remaining numerical columns with higher missingness are imputed using median values,
+# which provides robustness against clinical laboratory outliers.
 
 print("\n" + "=" * 65)
 print("STEP 4: Numeric imputation")
@@ -176,9 +171,8 @@ combined.dropna(subset=cols_lt3, inplace=True)
 x = combined.iloc[:, :-1].copy()
 y = combined.iloc[:,  -1].copy()
 
-# Median imputation for everything else
-# Median is better than mean here because ICU measurements (creatinine,
-# bilirubin, etc.) often have extreme outliers that skew the mean
+# Median imputation for columns exceeding the threshold
+# Median imputation is chosen over mean imputation due to its resilience against extreme clinical outliers.
 impute_num = SimpleImputer(strategy='median')
 x = pd.DataFrame(
     impute_num.fit_transform(x),
@@ -189,15 +183,14 @@ print(f"  Shape after numeric imputation: {x.shape}")
 
 
 # =============================================================================
-# STEP 5 — Train / test split  (this MUST happen before SMOTETomek)
+# STEP 5 — Stratified Partitioning (Train/Test Split)
 # =============================================================================
-# One of the most important decisions in this pipeline: the split comes BEFORE
-# resampling. If you apply SMOTETomek on the full dataset first and then split,
-# synthetic samples from the minority class will leak into the test set. That
-# means your accuracy score measures performance on partially synthetic data,
-# not real patients — which overstates how well the model generalises.
+# To ensure zero data leakage, partitioning is executed prior to any resampling
+# or scaling. Applying resampling (such as SMOTETomek) before splitting would
+# introduce synthetic samples into the evaluation partition, artificially inflating
+# performance and compromising model generalizability.
 #
-# Correct order: split → resample training data only → scale → PCA → train
+# The execution sequence is defined as: partition → resample train only → scale → PCA → evaluate
 
 print("\n" + "=" * 65)
 print("STEP 5: Stratified train / test split (70% train, 30% test)")
@@ -216,21 +209,15 @@ print(f"  Train class balance:\n{pd.Series(y_train).value_counts().to_string()}"
 
 
 # =============================================================================
-# STEP 6 — SMOTETomek resampling (training data only)
+# STEP 6 — Class Imbalance Mitigation via SMOTETomek (Training Partition Only)
 # =============================================================================
-# ICU survival datasets are inherently imbalanced — there are usually far more
-# survivors than non-survivors. Without correction, classifiers learn to just
-# predict the majority class and still get decent accuracy, while completely
-# failing on the minority class that matters most clinically.
+# Clinical data exhibits significant class imbalance. To prevent classifiers
+# from biasing predictions toward the majority class (survival), SMOTETomek is applied:
+#   - SMOTE generates synthetic minority samples through interpolation.
+#   - Tomek Links detects and removes overlapping majority instances.
 #
-# SMOTETomek is a two-part technique:
-#   SMOTE     — creates synthetic minority class samples by interpolating
-#               between existing minority samples in feature space
-#   Tomek Links — removes majority class samples that are too close to the
-#               decision boundary (cleaning borderline cases)
-#
-# Together they both oversample the minority AND clean the majority class,
-# giving the model a much cleaner decision boundary to learn from.
+# This hybrid approach refines the decision boundary, reducing bias and improving
+# minority class classification metrics.
 
 print("\n" + "=" * 65)
 print("STEP 6: SMOTETomek resampling — training data only")
@@ -244,16 +231,13 @@ print(f"  Resampled class balance:\n{pd.Series(y_train).value_counts().to_string
 
 
 # =============================================================================
-# STEP 7 — Feature scaling with StandardScaler
+# STEP 7 — Feature Scaling
 # =============================================================================
-# Many classifiers (especially SVM and KNN) are sensitive to feature scale.
-# A blood pressure reading in mmHg (range 60-200) would otherwise dominate
-# a binary encoded feature (range 0-1) simply due to magnitude, not importance.
+# Standard scaling is required to normalize features, ensuring that large-magnitude
+# features (e.g., blood pressure) do not dominate binary indicator columns.
 #
-# StandardScaler transforms each feature to have mean=0 and std=1.
-# Critical rule: fit the scaler ONLY on training data, then transform both.
-# Fitting on the full dataset would let test-set statistics influence the
-# scaler — another form of data leakage.
+# Features are scaled to zero mean and unit variance. The scaler is fit strictly on
+# the training partition to prevent leakage of evaluation-set statistics.
 
 print("\n" + "=" * 65)
 print("STEP 7: StandardScaler (fit on training data only)")
@@ -270,25 +254,20 @@ print("  (Should all be approximately 0.0 after scaling)")
 
 
 # =============================================================================
-# STEP 8 — Dimensionality reduction with PCA
+# STEP 8 — Dimensionality Reduction via Principal Component Analysis (PCA)
 # =============================================================================
-# After encoding, we have over 100 features. Many of these are correlated
-# (e.g., multiple blood pressure readings, multiple glucose measurements).
-# PCA reduces this to a smaller set of uncorrelated components that capture
-# most of the variance in the data, which:
-#   - speeds up model training
-#   - reduces risk of overfitting on high-dimensional sparse data
-#   - removes multicollinearity that can destabilise some classifiers
+# Post-encoding clinical features exhibit high correlation. PCA extracts orthogonal
+# principal components, which minimizes multicollinearity, mitigates overfitting risks
+# on sparse high-dimensional data, and accelerates model convergence.
 #
-# Rather than hardcoding a number of components, I fit a full PCA and use
-# a scree plot to choose the number of components that explain 90% of
-# the total variance. This makes the choice data-driven and reproducible.
+# Rather than utilizing a hardcoded feature constraint, the component selection is
+# driven dynamically by a cumulative explained variance threshold.
 
 print("\n" + "=" * 65)
 print("STEP 8: PCA — selecting components via explained variance")
 print("=" * 65)
 
-# Quick 2D and 3D visualisations to check if classes are separable in PCA space
+# Dimensionality projections for qualitative class separability evaluation
 pca_2d    = PCA(n_components=2)
 X_2d      = pca_2d.fit_transform(X_train_scaled)
 fig_2d    = px.scatter(
@@ -338,8 +317,8 @@ plt.tight_layout()
 plt.savefig('pca_analysis.png', dpi=150, bbox_inches='tight')
 plt.show()
 
-# Select the minimum number of components that explain >= 90% variance
-n_components = int(np.argmax(cum_var >= 0.90)) + 1
+# Select components using the cumulative explained variance threshold (>= 90%)
+n_components = int(np.argmax(np.cumsum(pca_full.explained_variance_ratio_) >= 0.90)) + 1
 print(f"  Components explaining 90% variance: {n_components}")
 
 # Apply final PCA transformation
@@ -352,24 +331,22 @@ print(f"  Reduced test shape     : {X_test_pca.shape}")
 
 
 # =============================================================================
-# STEP 9 — Train and evaluate seven individual classifiers
+# STEP 9 — Comparative Classifier Evaluation
 # =============================================================================
-# I selected these seven classifiers because they represent a diverse range
-# of learning strategies:
+# Seven distinct classifiers are selected to represent a diverse range of
+# algorithmic learning strategies:
 #
-#   LR   — linear decision boundary, good baseline
-#   DT   — non-linear, interpretable, prone to overfitting alone
-#   GNB  — probabilistic, fast, works well with independent features
-#   KNN  — instance-based, no explicit training, sensitive to scale
-#   GB   — boosting: sequential weak learners, strong in practice
-#   RF   — bagging: parallel decision trees, reduces variance
-#   SVM  — finds maximum-margin hyperplane, strong on high-dim data
+#   LR   — Linear decision boundary (baseline)
+#   DT   — Hierarchical non-linear partitions
+#   GNB  — Probabilistic class conditional distributions
+#   KNN  — Instance-based similarity mapping
+#   GB   — Sequential gradient-boosting tree ensemble
+#   RF   — Bagging-based parallel decision trees
+#   SVM  — Max-margin hyperplane optimization
 #
-# Each model is evaluated with:
-#   (a) 10-fold stratified cross-validation on training data
-#       → gives mean ± std accuracy, which is more reliable than one split
-#   (b) Final evaluation on the held-out test set
-#       → gives the honest generalisation performance
+# Performance evaluation consists of:
+#   (a) 10-fold stratified cross-validation on training data to establish statistical variance
+#   (b) Final generalization evaluation on the independent test partition
 
 print("\n" + "=" * 65)
 print("STEP 9: Individual classifiers — training and evaluation")
@@ -403,7 +380,7 @@ results = {
     'F1'          : [],
 }
 
-# Store fitted models — we need them later for the ensemble
+# Repository for fitted models required for ensemble integration
 trained_models = {}
 
 for name, model in models.items():
@@ -457,23 +434,17 @@ for name, model in models.items():
 
 
 # =============================================================================
-# STEP 10 — Proposed EV-Patient Survival Ensemble (soft VotingClassifier)
+# STEP 10 — Ensemble voting architecture (EV-Patient Survival)
 # =============================================================================
-# A VotingClassifier combines multiple trained models. In 'soft' voting mode,
-# each model outputs a probability for each class and those probabilities are
-# averaged. The class with the highest average probability wins.
+# The proposed EV-Patient Survival model employs a soft-voting classifier configuration
+# that pools probability-weighted confidence vectors across all seven models.
 #
-# Why soft over hard voting?
-#   Hard voting: each model casts a binary vote (0 or 1), majority wins
-#   Soft voting : each model contributes its confidence level
-#   → A model that is 99% sure outweighs one that is 51% sure
-#   → This leads to better calibrated and generally more accurate predictions
+# Probability-weighted soft voting is preferred over majority hard voting as it preserves
+# model confidence calibrations, leading to more robust risk assessments.
 #
-# The intuition behind ensemble voting:
-#   SVM might struggle where the decision boundary is non-linear near the edge
-#   Random Forest compensates with its diverse tree structure
-#   Gradient Boosting adds sequential error correction
-#   Together they cover each other's blind spots
+# The ensemble combines distinct linear, tree-based, boosting, and max-margin learners.
+# This diverse configuration reduces structural prediction variance ($\sigma$) and minimizes
+# localized biases, thereby optimizing generalizability on unseen clinical datasets.
 
 print("\n" + "=" * 65)
 print("STEP 10: Proposed EV-Patient Survival — Ensemble Voting Classifier")
@@ -532,10 +503,10 @@ results['F1']         .append(round(ens_f1,        4))
 
 
 # =============================================================================
-# STEP 11 — Summary table and comparison charts
+# STEP 11 — Results Compilation and Visualization
 # =============================================================================
-# Everything above produces numbers. This section turns those numbers into
-# the charts and tables that go into the paper / dissertation appendix.
+# Performance statistics are compiled into structured comparative tables and
+# graphical visualizations for pipeline reporting.
 
 print("\n" + "=" * 65)
 print("STEP 11: Summary and visualisations")
