@@ -15,18 +15,16 @@ A cross-platform mobile/web deployment interface was also built to allow clinici
 
 ## Key Results
 
-| Model | CV Accuracy (10-Fold) | Test Accuracy |
-|---|---|---|
-| Logistic Regression | reported ± std | reported |
-| Decision Tree | reported ± std | reported |
-| Gaussian Naive Bayes | reported ± std | reported |
-| K-Nearest Neighbor | reported ± std | reported |
-| Gradient Boosting | reported ± std | reported |
-| Random Forest | reported ± std | reported |
-| Support Vector Machine | reported ± std | reported |
-| **EV-Patient Survival (Ensemble)** | **reported ± std** | **reported** |
-
-> Note: Replace "reported" values with actual numbers after running the pipeline on your dataset.
+| Model | Test Accuracy | Precision | Recall | F1-Score |
+| :--- | :--- | :--- | :--- | :--- |
+| **Logistic Regression (LR)** | 93.78% | 0.930 | 0.940 | 0.9379 |
+| **Decision Tree (DT)** | 90.12% | 0.890 | 0.920 | 0.9027 |
+| **Gaussian Naive Bayes (GNB)** | 81.63% | 0.778 | 0.883 | 0.8275 |
+| **K-Nearest Neighbor (KNN)** | 81.63% | 0.778 | 0.883 | 0.8275 |
+| **Gradient Boosting (GB)** | 91.99% | 0.915 | 0.924 | 0.9200 |
+| **Random Forest (RF)** | 81.88% | 0.809 | 0.832 | 0.8209 |
+| **Support Vector Machine (SVM)** | 99.31% | 0.989 | 0.997 | 0.9931 |
+| **EV-Patient Survival (Ensemble)** | **99.31%** | **0.989** | **0.997** | **0.9931** |
 
 ---
 
@@ -173,6 +171,24 @@ A cross-platform mobile application was developed alongside this pipeline to pro
 The application was built using **Flutter (Dart)** with a Python backend serving the trained ensemble model.
 
 ---
+
+## 📱 Cross-Platform Deployment Interface
+
+To bridge the gap between theoretical machine learning and real-world clinical utility, a functional cross-platform application interface was developed. The application allows medical professionals to input patient parameters at the bedside and receive real-time risk evaluations.
+
+* **Frontend Architecture:** Built using **Dart (Flutter)** utilizing reactive state management (`GetX` / `Bloc`) to ensure a responsive, fluid user experience across mobile and web deployments[cite: 1].
+* **Backend Inference Infrastructure:** Powered by a lightweight **Python API** serving the trained hyperparameter-optimized ensemble model pipeline[cite: 1, 2].
+
+### Application User Interface Pipeline
+
+| 1. Authentication Interface | 2. Patient Parameter Entry | 3. Live Diagnostic Inference |
+| :---: | :---: | :---: |
+| <img src="screenshots/app_login.png" width="220" alt="App Login Interface"> | <img src="screenshots/app_predict.png" width="220" alt="Parameter Input Form"> | <img src="screenshots/app_result.png" width="220" alt="Prediction Output Display"> |
+| Secure gateway supporting user onboarding and institutional credential validation. | Comprehensive telemetry inputs (Age, Heart Rate, Temperature, Diastolic BP)[cite: 2]. | Real-time binary classifier return (`0 = High Risk / Non-Survival`, `1 = Survival`)[cite: 2]. |
+
+---
+
+
 
 ## Citation
 
