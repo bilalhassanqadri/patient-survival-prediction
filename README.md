@@ -174,6 +174,25 @@ The application was built using **Flutter (Dart)** with a Python backend serving
 
 ---
 
+
+---
+
+## 📱 Cross-Platform Deployment Interface
+
+To bridge the gap between theoretical machine learning and real-world clinical utility, a functional cross-platform application interface was developed. The application allows medical professionals to input patient parameters at the bedside and receive real-time risk evaluations.
+
+* **Frontend Architecture:** Built using **Dart (Flutter)** utilizing reactive state management (`GetX` / `Bloc`) to ensure a responsive, fluid user experience across mobile and web deployments[cite: 1].
+* **Backend Inference Infrastructure:** Powered by a lightweight **Python API** serving the trained hyperparameter-optimized ensemble model pipeline[cite: 1, 2].
+
+### Application User Interface Pipeline
+
+| 1. Authentication Interface | 2. Patient Parameter Entry | 3. Live Diagnostic Inference |
+| :---: | :---: | :---: |
+| <img src="screenshots/app_login.png" width="220" alt="App Login Interface"> | <img src="screenshots/app_predict.png" width="220" alt="Parameter Input Form"> | <img src="screenshots/app_result.png" width="220" alt="Prediction Output Display"> |
+| Secure gateway supporting user onboarding and institutional credential validation. | Comprehensive telemetry inputs (Age, Heart Rate, Temperature, Diastolic BP)[cite: 2]. | Real-time binary classifier return (`0 = High Risk / Non-Survival`, `1 = Survival`)[cite: 2]. |
+
+---
+
 ## Citation
 
 If you use this code or methodology in your research, please cite:
