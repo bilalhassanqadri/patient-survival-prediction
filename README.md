@@ -30,6 +30,23 @@ A cross-platform mobile/web deployment interface was also built to allow clinici
 
 ---
 
+
+## Key Results
+
+| Model | Test Accuracy | Precision | Recall | F1-Score |
+| :--- | :--- | :--- | :--- | :--- |
+| **Logistic Regression (LR)** | 93.78% | 0.930 | 0.940 | 0.9379 |
+| **Decision Tree (DT)** | 90.12% | 0.890 | 0.920 | 0.9027 |
+| **Gaussian Naive Bayes (GNB)** | 81.63% | 0.778 | 0.883 | 0.8275 |
+| **K-Nearest Neighbor (KNN)** | 81.63% | 0.778 | 0.883 | 0.8275 |
+| **Gradient Boosting (GB)** | 91.99% | 0.915 | 0.924 | 0.9200 |
+| **Random Forest (RF)** | 81.88% | 0.809 | 0.832 | 0.8209 |
+| **Support Vector Machine (SVM)** | 99.31% | 0.989 | 0.997 | 0.9931 |
+| **EV-Patient Survival (Ensemble)** | **99.31%** | **0.989** | **0.997** | **0.9931** |
+
+---
+
+
 ## Pipeline Architecture
 
 ```
