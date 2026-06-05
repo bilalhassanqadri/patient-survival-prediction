@@ -101,7 +101,18 @@ A hybrid framework integrating Grid Search and Sequential Search is utilized to 
 - Random Forest (RF)
 - Support Vector Machine (SVM)
 - **Proposed Ensemble: EV-Patient Survival (soft VotingClassifier)**
+---
 
+## Project Structure
+
+```
+├── bilal_survival_pipeline.py         # Main ML pipeline (all steps)
+├── dataset.csv                        # Clinical dataset (not included — see below)
+├── model_results_summary.csv          # Generated after running pipeline
+├── model_comparison.png               # Generated bar chart comparison
+├── cv_accuracy_comparison.png         # Generated CV accuracy chart
+└── README.md                          # This file
+```
 
 ---
 
@@ -126,7 +137,7 @@ pip install pandas numpy matplotlib seaborn plotly scikit-learn imbalanced-learn
 ### Run the pipeline
 
 ```bash
-python bilal_survival_pipeline_fixed.py
+python bilal_survival_pipeline.py
 ```
 
 ### Output files generated
