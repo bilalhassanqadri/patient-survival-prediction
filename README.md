@@ -96,18 +96,6 @@ The proposed **EV-Patient Survival** model combines predictions from all 7 train
 - Support Vector Machine (SVM)
 - **Proposed Ensemble: EV-Patient Survival (soft VotingClassifier)**
 
----
-
-## Project Structure
-
-```
-├── bilal_survival_pipeline_fixed.py   # Main ML pipeline (all steps)
-├── dataset.csv                        # Clinical dataset (not included — see below)
-├── model_results_summary.csv          # Generated after running pipeline
-├── model_comparison.png               # Generated bar chart comparison
-├── cv_accuracy_comparison.png         # Generated CV accuracy chart
-└── README.md                          # This file
-```
 
 ---
 
