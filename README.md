@@ -106,6 +106,7 @@ A hybrid framework integrating Grid Search and Sequential Search is utilized to 
 ## Project Structure
 
 ```
+├── bilal_survival_pipeline.ipynb      # Jupyter Notebook implementation
 ├── bilal_survival_pipeline.py         # Main ML pipeline (all steps)
 ├── dataset.csv                        # Clinical dataset (not included — see below)
 ├── model_results_summary.csv          # Generated after running pipeline
