@@ -13,23 +13,6 @@ A cross-platform mobile/web deployment interface was also built to allow clinici
 
 ---
 
-## Key Results
-
-| Model | CV Accuracy (10-Fold) | Test Accuracy |
-|---|---|---|
-| Logistic Regression | reported ± std | reported |
-| Decision Tree | reported ± std | reported |
-| Gaussian Naive Bayes | reported ± std | reported |
-| K-Nearest Neighbor | reported ± std | reported |
-| Gradient Boosting | reported ± std | reported |
-| Random Forest | reported ± std | reported |
-| Support Vector Machine | reported ± std | reported |
-| **EV-Patient Survival (Ensemble)** | **reported ± std** | **reported** |
-
-> Note: Replace "reported" values with actual numbers after running the pipeline on your dataset.
-
----
-
 
 ## Key Results
 
